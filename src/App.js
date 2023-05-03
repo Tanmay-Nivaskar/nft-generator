@@ -1,25 +1,23 @@
-import logo from './logo.svg';
-import './App.css';
+import React from 'react';
+import OverlayImages from './OverlayImages';
+import body from './images/body.png'
+import eyes from './images/eyes.png'
+import mouth from './images/mouth.png'
+import MyComponent from './MyComponent'
+import Try from './Trycode'
 
-function App() {
+const App = () => {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div>
+      {/* <OverlayImages
+        image1={body}
+        image2={eyes}
+        image3={mouth}
+      /> */}
+      {/* <OverlayImages/> */}
+      <Try/>
     </div>
   );
-}
+};
 
 export default App;
