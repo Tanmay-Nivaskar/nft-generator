@@ -7,8 +7,8 @@ import Try from './Trycode'
 const App = () => {
   return (
     <div>
-      <MyComponent/>
-      {/* <OverlayImages/> */}
+      {/* <MyComponent/> */}
+      <OverlayImages/>
       {/* <Try/> */}
 
     </div>

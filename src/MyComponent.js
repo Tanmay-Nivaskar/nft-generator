@@ -42,6 +42,7 @@ const useDynamicUrlState = () => {
 const Trycode = () => {
   const [mergedImageURL, setMergedImageURL] = useState([]);
   const [urlStates, setUrlStates, fileInputRef, handleImageUpload] = useDynamicUrlState();
+  const [stateNames, setStateNames] = useState([""]);
 
   const handleImageMerge = async () => {
     handleClearState();
@@ -65,10 +66,17 @@ const Trycode = () => {
       updatedStates.splice(index, 1);
       return updatedStates;
     });
+    setStateNames((prevNames) => {
+      const updatedNames = [...prevNames];
+      updatedNames.splice(index, 1);
+      return updatedNames;
+    });
   };
 
-  const handleAddStates = () => {
+  const handleAddStates = (event) => {
+    event.preventDefault();
     setUrlStates((prevUrlStates) => [...prevUrlStates, []]);
+    setStateNames((prevNames) => [...prevNames, '']);
   };
 
   const handleDelete = (index, imageIndex) => {
@@ -78,6 +86,15 @@ const Trycode = () => {
       images.splice(imageIndex, 1);
       updatedStates[index] = images;
       return updatedStates;
+    });
+  };
+
+  const handleInputChange = (index, value) => {
+    console.log('in setname function')
+    setStateNames((prevNames) => {
+      const updatedNames = [...prevNames];
+      updatedNames[index] = value;
+      return updatedNames;
     });
   };
 
@@ -91,12 +108,16 @@ const Trycode = () => {
 
   return (
     <div>
-      <label>Name : </label>
-      <input type="text" />
-      <button onClick={handleAddStates}>Add</button>
+      <form onSubmit={handleAddStates}>
+        <label>Name : </label>
+        <input type="text" value={stateNames[stateNames.length - 1]} onChange={(e) => handleInputChange(stateNames.length - 1, e.target.value)} />
+        <input type="submit" value="Add" />
+      </form>
+
       {urlStates.map((urlState, index) => (
         <div key={index}>
-          <h1>Field {index + 1}</h1>
+          <h1>{stateNames[index] || `Field ${index + 1}`}</h1>
+
           <input type="file" ref={fileInputRef} onChange={(event) => handleImageUpload(event, index)} multiple />
           <button onClick={() => handleRemoveStates(index)}>Remove</button>
           <br />

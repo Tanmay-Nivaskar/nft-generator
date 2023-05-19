@@ -1,124 +1,141 @@
-  import React, { useState } from 'react';
-  import mergeImages from 'merge-images';
+import React, { useState, useRef } from 'react';
+import mergeImages from 'merge-images';
 
-  const useDynamicUrlState = (fieldCount) => {
-    const [urlStates, setUrlStates] = useState([]);
-    
+const useDynamicUrlState = () => {
+  const [urlStates, setUrlStates] = useState([]);
+  const fileInputRef = useRef(null);
 
-    const handleImageUpload = (event, index) => {
-      const imageFiles = event.target.files;
-      const newUrls = [];
+  const handleImageUpload = (event, index) => {
+    const imageFiles = event.target.files;
+    const newUrls = [];
 
-      for (let i = 0; i < imageFiles.length; i++) {
-        const fileReader = new FileReader();
+    for (let i = 0; i < imageFiles.length; i++) {
+      const fileReader = new FileReader();
 
-        fileReader.onload = (e) => {
-          const imageUrl = e.target.result;
+      fileReader.onload = (e) => {
+        const imageUrl = e.target.result;
 
-          setUrlStates((prevUrlStates) => {
-            const updatedStates = [...prevUrlStates];
-            updatedStates[index] = [...updatedStates[index], imageUrl];
-            return updatedStates;
-          });
-
-          newUrls.push(imageUrl);
-
-          if (newUrls.length === imageFiles.length) {
-            setUrlStates((prevUrlStates) => {
-              const updatedStates = [...prevUrlStates];
-              updatedStates[index] = newUrls;
-              return updatedStates;
-            });
-          }
-        };
-
-        fileReader.readAsDataURL(imageFiles[i]);
-      }
-    };
-
-    return [urlStates, setUrlStates, handleImageUpload];
-  };
-
-  const Trycode = () => {
-    const [mergedImageURL, setMergedImageURL] = useState([]);
-    const [imageCount, setImageCount] = useState(0);
-    const [uploadComplete, setUploadComplete] = useState(false);
-    const [img, setImg] = useState([]);
-    const [count, setCount] = useState();
-
-    const [urlStates, setUrlStates, handleImageUpload] = useDynamicUrlState(); // Adjust the fieldCount as needed
-
-    const handleImageMerge = async () => {
-      handleClearState();
-
-      const mergeCombinations = cartesianProduct(urlStates);
-
-      for (const combination of mergeCombinations) {
-        const mergedImage = await mergeImages(combination);
-        setMergedImageURL((current) => [...current, mergedImage]);
-      }
-    };
-
-    const handleClearState = () => {
-      setMergedImageURL([]);
-      setImg([]);
-      urlStates.forEach((_, index) => {
         setUrlStates((prevUrlStates) => {
           const updatedStates = [...prevUrlStates];
-          updatedStates[index] = [];
+          updatedStates[index] = [...updatedStates[index], imageUrl];
           return updatedStates;
         });
-      });
-    };
 
-    const handleRemoveStates = (index) => {
-      const updatedItems = urlStates.filter((i) => i !== index);
-      setUrlStates(updatedItems);
-    };
+        newUrls.push(imageUrl);
 
-    const handleaddStates = ()=> {
-      setUrlStates(current => [...current, ['1']])
-    } 
+        if (newUrls.length === imageFiles.length) {
+          setUrlStates((prevUrlStates) => {
+            const updatedStates = [...prevUrlStates];
+            updatedStates[index] = newUrls;
+            return updatedStates;
+          });
+        }
+      };
 
-    const cartesianProduct = (arrays) => {
-      return arrays.reduce(
-        (acc, array) =>
-          acc.flatMap((x) => array.map((y) => [...x, y])),
-        [[]]
-      );
-    };
+      fileReader.readAsDataURL(imageFiles[i]);
+    }
+  };
 
-    return (
-      <div>
-        <button onClick={()=> handleaddStates()}>Add</button>
-        {urlStates.map((urlState, index) => (
-          <div key={index}>
-            
-            <h1>Field {index + 1}</h1>
-            <input
-              type="file"
-              onChange={(event) => handleImageUpload(event, index)}
-              multiple
-            />
-            <button onClick={() => handleRemoveStates(urlState)} >Remove</button>
-            <br />
-            {urlState.map((imgSrc, key) => (
-              <img key={key} src={imgSrc} alt={`Image ${key}`} />
-            ))}
-            <br />
-          </div>
-        ))}
+  return [urlStates, setUrlStates, fileInputRef, handleImageUpload];
+};
 
-        <button onClick={handleImageMerge}>Merge Images</button>
+const Trycode = () => {
+  const [mergedImageURL, setMergedImageURL] = useState([]);
+  const [urlStates, setUrlStates, fileInputRef, handleImageUpload] = useDynamicUrlState();
+  const [stateNames, setStateNames] = useState([""]);
 
-        <button onClick={handleClearState}>Clear</button>
-        <br />
-        <h1>Merged Images</h1>
-        {mergedImageURL.map((imgSrc, key) => (
-          <img key={key} src={imgSrc} alt={`Merged Image ${key}`} />
-        ))}
-      </div>
+  const handleImageMerge = async () => {
+    handleClearState();
+
+    const mergeCombinations = cartesianProduct(urlStates);
+
+    for (const combination of mergeCombinations) {
+      const mergedImage = await mergeImages(combination);
+      setMergedImageURL((current) => [...current, mergedImage]);
+    }
+  };
+
+  const handleClearState = () => {
+    setMergedImageURL([]);
+    // setUrlStates([]);
+  };
+
+  const handleRemoveStates = (index) => {
+    setUrlStates((prevUrlStates) => {
+      const updatedStates = [...prevUrlStates];
+      updatedStates.splice(index, 1);
+      return updatedStates;
+    });
+    setStateNames((prevNames) => {
+      const updatedNames = [...prevNames];
+      updatedNames.splice(index, 1);
+      return updatedNames;
+    });
+  };
+
+  const handleAddStates = (event) => {
+    event.preventDefault();
+    setUrlStates((prevUrlStates) => [...prevUrlStates, []]);
+    setStateNames((prevNames) => [...prevNames, '']);
+  };
+
+  const handleDelete = (index, imageIndex) => {
+    setUrlStates((prevUrlStates) => {
+      const updatedStates = [...prevUrlStates];
+      const images = [...updatedStates[index]];
+      images.splice(imageIndex, 1);
+      updatedStates[index] = images;
+      return updatedStates;
+    });
+  };
+
+  const handleInputChange = (index, value) => {
+    console.log('in setname function')
+    setStateNames((prevNames) => {
+      const updatedNames = [...prevNames];
+      updatedNames[index] = value;
+      return updatedNames;
+    });
+  };
+
+  const cartesianProduct = (arrays) => {
+    return arrays.reduce(
+      (acc, array) =>
+        acc.flatMap((x) => array.map((y) => [...x, y])),
+      [[]]
     );
   };
 
-  export default Trycode;
+  return (
+    <div>
+      <form onSubmit={handleAddStates}>
+        <label>Name : </label>
+        <input type="text" value={stateNames[stateNames.length - 1]} onChange={(e) => handleInputChange(stateNames.length - 1, e.target.value)} />
+        <input type="submit" value="Add" />
+      </form>
+
+      {urlStates.map((urlState, index) => (
+        <div key={index}>
+          <h1>{stateNames[index] || `Field ${index + 1}`}</h1>
+
+          <input type="file" ref={fileInputRef} onChange={(event) => handleImageUpload(event, index)} multiple />
+          <button onClick={() => handleRemoveStates(index)}>Remove</button>
+          <br />
+          {urlState.map((imgSrc, key) => (
+            <img onClick={() => handleDelete(index, key)} key={key} src={imgSrc} alt={`Image ${key}`} />
+          ))}
+          <br />
+        </div>
+      ))}
+      <button onClick={handleImageMerge}>Merge Images</button>
+      <button onClick={handleClearState}>Clear</button>
+      <br />
+      <h1>Merged Images</h1>
+      {mergedImageURL.map((imgSrc, key) => (
+        <img key={key} src={imgSrc} alt={`Merged Image ${key}`} />
+      ))}
+    </div>
+  );
+};
+
+export default Trycode;
