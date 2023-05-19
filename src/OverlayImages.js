@@ -1,91 +1,113 @@
-// import React, { useState, useEffect } from 'react';
-// import mergeImages from 'merge-images';
-
-// const OverlayImages = ({ image1, image2, image3 }) => {
-//   const [image, setImage] = useState('');
-
-//   useEffect(() => {
-//     const overlayImages = async () => {
-//       const mergedImage = await mergeImages([image1, image2, image3]);
-//       setImage(mergedImage);
-//     };
-//     overlayImages();
-//   }, [image1, image2, image3]);
-
-//   return <img src={image} alt="Overlayed Images" />;
-// };
-
-// export default OverlayImages;
-
-
-
-
-
-
-
-
-
-
-
-
-
 import React, { useState } from 'react';
 import mergeImages from 'merge-images';
 
-const OverlayImages = () => {
-  const [image1, setImage1] = useState('');
-  const [image2, setImage2] = useState('');
-  const [image3, setImage3] = useState('');
-  const [mergedImage, setMergedImage] = useState('');
+const useDynamicUrlState = (fieldCount) => {
+  const [urlStates, setUrlStates] = useState(
+    Array.from({ length: fieldCount }, () => [])
+  );
 
-  const handleFormSubmit = async (event) => {
-    event.preventDefault();
-    const mergedImage = await mergeImages([image1, image2, image3]);
-    setMergedImage(mergedImage);
+  const handleImageUpload = (event, index) => {
+    const imageFiles = event.target.files;
+    const newUrls = [];
+
+    for (let i = 0; i < imageFiles.length; i++) {
+      const fileReader = new FileReader();
+
+      fileReader.onload = (e) => {
+        const imageUrl = e.target.result;
+
+        setUrlStates((prevUrlStates) => {
+          const updatedStates = [...prevUrlStates];
+          updatedStates[index] = [...updatedStates[index], imageUrl];
+          return updatedStates;
+        });
+
+        newUrls.push(imageUrl);
+
+        if (newUrls.length === imageFiles.length) {
+          setUrlStates((prevUrlStates) => {
+            const updatedStates = [...prevUrlStates];
+            updatedStates[index] = newUrls;
+            return updatedStates;
+          });
+        }
+      };
+
+      fileReader.readAsDataURL(imageFiles[i]);
+    }
   };
 
-  const handleImage1Change = (event) => {
-    if (event.target.files && event.target.files[0]) {
-        setImage1(URL.createObjectURL(event.target.files[0]));}
+  return [urlStates, setUrlStates, handleImageUpload];
+};
+
+const Trycode = () => {
+  const [mergedImageURL, setMergedImageURL] = useState([]);
+  const [imageCount, setImageCount] = useState(0);
+  const [uploadComplete, setUploadComplete] = useState(false);
+  const [img, setImg] = useState([]);
+
+  const [urlStates, setUrlStates, handleImageUpload] = useDynamicUrlState(5); // Adjust the fieldCount as needed
+
+  const handleImageMerge = async () => {
+    handleClearState();
+
+    const mergeCombinations = cartesianProduct(urlStates);
+
+    for (const combination of mergeCombinations) {
+      const mergedImage = await mergeImages(combination);
+      setMergedImageURL((current) => [...current, mergedImage]);
+    }
   };
 
-  const handleImage2Change = (event) => {
-    if (event.target.files && event.target.files[0]) {
-        setImage2(URL.createObjectURL(event.target.files[0]));}
+  const handleClearState = () => {
+    setMergedImageURL([]);
+    setImg([]);
+    urlStates.forEach((_, index) => {
+      setUrlStates((prevUrlStates) => {
+        const updatedStates = [...prevUrlStates];
+        updatedStates[index] = [];
+        return updatedStates;
+      });
+    });
   };
 
-  const handleImage3Change = (event) => {
-    if (event.target.files && event.target.files[0]) {
-        setImage3(URL.createObjectURL(event.target.files[0]));}
+  const cartesianProduct = (arrays) => {
+    return arrays.reduce(
+      (acc, array) =>
+        acc.flatMap((x) => array.map((y) => [...x, y])),
+      [[]]
+    );
   };
 
   return (
     <div>
-      <form onSubmit={handleFormSubmit}>
-        <div>
-          <label htmlFor="image1">Image 1:</label>
-          <input type="file" id="image1" onChange={handleImage1Change} />
+      {urlStates.map((urlState, index) => (
+        <div key={index}>
+          
+          <h1>Field {index + 1}</h1>
+          <input
+            type="file"
+            onChange={(event) => handleImageUpload(event, index)}
+            multiple
+          />
+          <br />
+          {urlState.map((imgSrc, key) => (
+            <img key={key} src={imgSrc} alt={`Image ${key}`} />
+          ))}
+          <br />
         </div>
-        <div>
-          <label htmlFor="image2">Image 2:</label>
-          <input type="file" id="image2" onChange={handleImage2Change} />
-        </div>
-        <div>
-          <label htmlFor="image3">Image 3:</label>
-          <input type="file" id="image3" onChange={handleImage3Change} />
-        </div>
-        <button type="submit">Merge Images</button>
-      </form>
-      {mergedImage && <img src={mergedImage} alt="Merged Images" />}
-      {/* <img src={mergedImage} alt="Merged Images" /> */}
+      ))}
 
-    <br/><br/> <br/> <br/>
-    <img src={image1} alt="Body" />
-    <img src={image2} alt="Eyes" />
-    <img src={image3} alt="Mouth" />
-    
+      <button onClick={handleImageMerge}>Merge Images</button>
+
+      <button onClick={handleClearState}>Clear</button>
+      <br />
+      <h1>Merged Images</h1>
+      {mergedImageURL.map((imgSrc, key) => (
+        <img key={key} src={imgSrc} alt={`Merged Image ${key}`} />
+      ))}
     </div>
   );
 };
 
-export default OverlayImages;
+export default Trycode;
