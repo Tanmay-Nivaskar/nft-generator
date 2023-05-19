@@ -7,12 +7,8 @@ import Try from './Trycode'
 const App = () => {
   return (
     <div>
-      {/* <OverlayImages
-        image1={body}
-        image2={eyes}
-        image3={mouth}
-      /> */}
-      <OverlayImages/>
+      <MyComponent/>
+      {/* <OverlayImages/> */}
       {/* <Try/> */}
 
     </div>
