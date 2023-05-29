@@ -1,9 +1,11 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import mergeImages from 'merge-images';
+import Style from './OverlayImages.module.css';
 
 const useDynamicUrlState = () => {
   const [urlStates, setUrlStates] = useState([]);
   const fileInputRef = useRef(null);
+  // const [imageStyle, setImageStyle] = useState({});
 
   const handleImageUpload = (event, index) => {
     const imageFiles = event.target.files;
@@ -29,6 +31,7 @@ const useDynamicUrlState = () => {
             updatedStates[index] = newUrls;
             return updatedStates;
           });
+
         }
       };
 
@@ -43,6 +46,15 @@ const Trycode = () => {
   const [mergedImageURL, setMergedImageURL] = useState([]);
   const [urlStates, setUrlStates, fileInputRef, handleImageUpload] = useDynamicUrlState();
   const [stateNames, setStateNames] = useState([""]);
+  const [imagesMerged, setImagesMerged] = useState(false);
+
+  useEffect(() => {
+    if (mergedImageURL.length > 0) {
+      setImagesMerged(true);
+    } else {
+      setImagesMerged(false);
+    }
+  }, [mergedImageURL]);
 
   const handleImageMerge = async () => {
     handleClearState();
@@ -105,35 +117,51 @@ const Trycode = () => {
       [[]]
     );
   };
+  
 
   return (
-    <div>
-      <form onSubmit={handleAddStates}>
-        <label>Name : </label>
-        <input type="text" value={stateNames[stateNames.length - 1]} onChange={(e) => handleInputChange(stateNames.length - 1, e.target.value)} />
-        <input type="submit" value="Add" />
-      </form>
+    <div className={Style.container}>
 
-      {urlStates.map((urlState, index) => (
-        <div key={index}>
-          <h1>{stateNames[index] || `Field ${index + 1}`}</h1>
-
-          <input type="file" ref={fileInputRef} onChange={(event) => handleImageUpload(event, index)} multiple />
-          <button onClick={() => handleRemoveStates(index)}>Remove</button>
-          <br />
-          {urlState.map((imgSrc, key) => (
-            <img onClick={() => handleDelete(index, key)} key={key} src={imgSrc} alt={`Image ${key}`} />
-          ))}
-          <br />
+      <div className={Style.left_side}>
+        <div className={Style.layer_input}>
+          <form onSubmit={handleAddStates}>
+            <input type="text" placeholder='Layer Name' required value={stateNames[stateNames.length - 1]} onChange={(e) => handleInputChange(stateNames.length - 1, e.target.value)} />
+            <input className={Style.submitbtn} type="submit" value="+Add" />
+          </form>
         </div>
-      ))}
-      <button onClick={handleImageMerge}>Merge Images</button>
-      <button onClick={handleClearState}>Clear</button>
-      <br />
-      <h1>Merged Images</h1>
-      {mergedImageURL.map((imgSrc, key) => (
-        <img key={key} src={imgSrc} alt={`Merged Image ${key}`} />
-      ))}
+        <br/>
+        <br/>
+
+        {urlStates.map((urlState, index) => (
+          <div key={index}>
+            <h1>{stateNames[index] || `Field ${index + 1}`}</h1>
+
+            <input type="file" ref={fileInputRef} onChange={(event) => handleImageUpload(event, index)} multiple />
+            <button onClick={() => handleRemoveStates(index)}>Remove</button>
+            <br />
+            {urlState.map((imgSrc, key) => (
+              <img onClick={() => handleDelete(index, key)} key={key} src={imgSrc} alt={`Image ${key}`} />
+            ))}
+            <br />
+          </div>
+        ))}
+
+            <div className={Style.mergebtn} >
+                <button onClick={handleImageMerge}>Merge Images</button>
+                <button onClick={handleClearState}>Clear</button>
+            </div>
+
+      </div>
+
+
+
+      <div className={Style.displayMergedImg} >
+          {imagesMerged && <h1>Merged Images</h1>}
+          {mergedImageURL.map((imgSrc, key) => (
+            <img className={Style.merged_images} key={key} src={imgSrc} alt={`Merged Image ${key}`} />
+          ))}
+      </div>
+
     </div>
   );
 };
