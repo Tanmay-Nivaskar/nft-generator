@@ -122,10 +122,10 @@ const Trycode = () => {
   return (
     <div className={Style.container}>
 
-      <div className={Style.left_side}>
+      <div>
         <div className={Style.layer_input}>
           <form onSubmit={handleAddStates}>
-            <input type="text" placeholder='Layer Name' required value={stateNames[stateNames.length - 1]} onChange={(e) => handleInputChange(stateNames.length - 1, e.target.value)} />
+            <input className={Style.layer_name_input} type="text" placeholder='Layer Name' required value={stateNames[stateNames.length - 1]} onChange={(e) => handleInputChange(stateNames.length - 1, e.target.value)} />
             <input className={Style.submitbtn} type="submit" value="+Add" />
           </form>
         </div>
@@ -134,14 +134,20 @@ const Trycode = () => {
 
         {urlStates.map((urlState, index) => (
           <div key={index}>
-            <h1>{stateNames[index] || `Field ${index + 1}`}</h1>
 
-            <input type="file" ref={fileInputRef} onChange={(event) => handleImageUpload(event, index)} multiple />
-            <button onClick={() => handleRemoveStates(index)}>Remove</button>
-            <br />
-            {urlState.map((imgSrc, key) => (
-              <img onClick={() => handleDelete(index, key)} key={key} src={imgSrc} alt={`Image ${key}`} />
-            ))}
+            <div className={Style.layer} >
+              <p style={{color: '#FFDF2B',}}>{stateNames[index]}</p>
+              <input type="file" ref={fileInputRef} onChange={(event) => handleImageUpload(event, index)} multiple />
+              <button onClick={() => handleRemoveStates(index)}>Remove</button>
+              <div className={Style.upload_image_container}>
+                {urlState.map((imgSrc, key) => (
+                  <img className={Style.upload_image} onClick={() => handleDelete(index, key)} key={key} src={imgSrc} alt={`Image ${key}`} />
+                ))}
+              </div>
+            </div>
+
+
+
             <br />
           </div>
         ))}
