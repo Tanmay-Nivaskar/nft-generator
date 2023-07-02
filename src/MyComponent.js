@@ -1,13 +1,17 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import mergeImages from 'merge-images';
+import Style from './OverlayImages.module.css';
 
 const useDynamicUrlState = () => {
   const [urlStates, setUrlStates] = useState([]);
+  const [probabilities, setProbabilities] = useState([]);
+
   const fileInputRef = useRef(null);
 
   const handleImageUpload = (event, index) => {
     const imageFiles = event.target.files;
     const newUrls = [];
+    const newProbabilities = [];
 
     for (let i = 0; i < imageFiles.length; i++) {
       const fileReader = new FileReader();
@@ -22,42 +26,92 @@ const useDynamicUrlState = () => {
         });
 
         newUrls.push(imageUrl);
-
-        if (newUrls.length === imageFiles.length) {
-          setUrlStates((prevUrlStates) => {
-            const updatedStates = [...prevUrlStates];
-            updatedStates[index] = newUrls;
-            return updatedStates;
-          });
-        }
       };
 
       fileReader.readAsDataURL(imageFiles[i]);
     }
+
+    const defaultProbability = 1 / imageFiles.length;
+    for (let i = 0; i < imageFiles.length; i++) {
+      newProbabilities.push(defaultProbability);
+    }
+
+    setProbabilities((prevProbabilities) => {
+      const updatedProbabilities = [...prevProbabilities];
+      updatedProbabilities[index] = newProbabilities;
+      return updatedProbabilities;
+    });
   };
 
-  return [urlStates, setUrlStates, fileInputRef, handleImageUpload];
+  const handleProbabilityChange = (index, imageIndex, probability) => {
+    setProbabilities((prevProbabilities) => {
+      const updatedProbabilities = [...prevProbabilities];
+      const probabilities = [...updatedProbabilities[index]];
+      probabilities[imageIndex] = probability;
+      updatedProbabilities[index] = probabilities;
+      return updatedProbabilities;
+    });
+  };
+
+  return [urlStates, setUrlStates, probabilities, handleImageUpload, handleProbabilityChange, fileInputRef];
 };
 
 const Trycode = () => {
   const [mergedImageURL, setMergedImageURL] = useState([]);
-  const [urlStates, setUrlStates, fileInputRef, handleImageUpload] = useDynamicUrlState();
+  const [urlStates, setUrlStates, probabilities, handleImageUpload, handleProbabilityChange, fileInputRef] = useDynamicUrlState();
   const [stateNames, setStateNames] = useState([""]);
+  const [imagesMerged, setImagesMerged] = useState(false);
+
+  useEffect(() => {
+    if (mergedImageURL.length > 0) {
+      setImagesMerged(true);
+    } else {
+      setImagesMerged(false);
+    }
+  }, [mergedImageURL]);
 
   const handleImageMerge = async () => {
     handleClearState();
 
     const mergeCombinations = cartesianProduct(urlStates);
+    const mergedImages = [];
 
     for (const combination of mergeCombinations) {
-      const mergedImage = await mergeImages(combination);
-      setMergedImageURL((current) => [...current, mergedImage]);
+      let mergedImage = null;
+      let probability = 1;
+
+      for (let i = 0; i < combination.length; i++) {
+        const image = combination[i];
+        const imageProbability = probabilities[i];
+        console.log(imageProbability);
+        let randomvalue = Math.random();
+        console.log(randomvalue);
+        if (randomvalue < imageProbability) {
+          // if (mergedImage === null) {
+          //   mergedImage = image;
+          //   probability = imageProbability;
+          // } else {
+          //   mergedImage = await mergeImages(combination);
+          //   setMergedImageURL((current) => [...current, mergedImage]);
+          //   probability *= imageProbability;
+          // }
+          mergedImage = await mergeImages(image);
+            setMergedImageURL((current) => [...current, mergedImage]);
+        }
+      }
+
+      if (mergedImage !== null) {
+        mergedImages.push({ src: mergedImage, probability });
+      }
     }
+
+    setMergedImageURL(mergedImages);
   };
 
   const handleClearState = () => {
     setMergedImageURL([]);
-    // setUrlStates([]);
+    setUrlStates([]);
+    // setProbabilities([]);
   };
 
   const handleRemoveStates = (index) => {
@@ -87,15 +141,28 @@ const Trycode = () => {
       updatedStates[index] = images;
       return updatedStates;
     });
+    // setProbabilities((prevProbabilities) => {
+    //   const updatedProbabilities = [...prevProbabilities];
+    //   const probabilities = [...updatedProbabilities[index]];
+    //   probabilities.splice(imageIndex, 1);
+    //   updatedProbabilities[index] = probabilities;
+    //   return updatedProbabilities;
+    // });
   };
 
   const handleInputChange = (index, value) => {
-    console.log('in setname function')
     setStateNames((prevNames) => {
       const updatedNames = [...prevNames];
       updatedNames[index] = value;
       return updatedNames;
     });
+  };
+
+  const handleProbabilityInputChange = (index, imageIndex, value) => {
+    const probability = parseFloat(value);
+    if (!isNaN(probability) && probability >= 0 && probability <= 1) {
+      handleProbabilityChange(index, imageIndex, probability);
+    }
   };
 
   const cartesianProduct = (arrays) => {
@@ -107,33 +174,56 @@ const Trycode = () => {
   };
 
   return (
-    <div>
-      <form onSubmit={handleAddStates}>
-        <label>Name : </label>
-        <input type="text" value={stateNames[stateNames.length - 1]} onChange={(e) => handleInputChange(stateNames.length - 1, e.target.value)} />
-        <input type="submit" value="Add" />
-      </form>
-
-      {urlStates.map((urlState, index) => (
-        <div key={index}>
-          <h1>{stateNames[index] || `Field ${index + 1}`}</h1>
-
-          <input type="file" ref={fileInputRef} onChange={(event) => handleImageUpload(event, index)} multiple />
-          <button onClick={() => handleRemoveStates(index)}>Remove</button>
-          <br />
-          {urlState.map((imgSrc, key) => (
-            <img onClick={() => handleDelete(index, key)} key={key} src={imgSrc} alt={`Image ${key}`} />
-          ))}
-          <br />
+    <div className={Style.container}>
+      <div>
+        <div className={Style.layer_input}>
+          <form onSubmit={handleAddStates}>
+            <input className={Style.layer_name_input} type="text" placeholder='Layer Name' required value={stateNames[stateNames.length - 1]} onChange={(e) => handleInputChange(stateNames.length - 1, e.target.value)} />
+            <input className={Style.submitbtn} type="submit" value="+Add" />
+          </form>
         </div>
-      ))}
-      <button onClick={handleImageMerge}>Merge Images</button>
-      <button onClick={handleClearState}>Clear</button>
-      <br />
-      <h1>Merged Images</h1>
-      {mergedImageURL.map((imgSrc, key) => (
-        <img key={key} src={imgSrc} alt={`Merged Image ${key}`} />
-      ))}
+        <br/>
+        <br/>
+
+        {urlStates.map((urlState, index) => (
+          <div key={index}>
+            <div className={Style.layer}>
+              <p style={{ color: '#FFDF2B' }}>{stateNames[index]}</p>
+              <input type="file" ref={fileInputRef} onChange={(event) => handleImageUpload(event, index)} multiple />
+              <button onClick={() => handleRemoveStates(index)}>Remove</button>
+              <div className={Style.upload_image_container}>
+                {urlState.map((imgSrc, key) => (
+                  <div key={key} className={Style.image_probability}>
+                    <img className={Style.upload_image} onClick={() => handleDelete(index, key)} src={imgSrc} alt={`Image ${key}`} />
+                    <input
+                      type="text"
+                      className={Style.image_probability_input}
+                      value={probabilities[index][key]}
+                      onChange={(e) => handleProbabilityInputChange(index, key, e.target.value)}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+            <br />
+          </div>
+        ))}
+
+        <div className={Style.mergebtn}>
+          <button onClick={handleImageMerge}>Merge Images</button>
+          <button onClick={handleClearState}>Clear</button>
+        </div>
+      </div>
+
+      <div className={Style.displayMergedImg}>
+        {imagesMerged && <h1>Merged Images</h1>}
+        {mergedImageURL.map((image, key) => (
+          <div key={key}>
+            <img className={Style.merged_images} src={image.src} alt={`Merged Image ${key}`} />
+            <p>Probability: {image.probability}</p>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
