@@ -8,8 +8,8 @@ const App = () => {
     <div>
       {/* <Generator/> */}
       <header style={{fontSize: '3rem', padding: '30px', color: '#FFDF2B', fontWeight: 'bold', width: '40%'}}>NFT Generator</header>
-      {/* <Mycomponent/> */}
-      <OverlayImages/>
+      <Mycomponent/>
+      {/* <OverlayImages/> */}
     </div>
   );
 };
